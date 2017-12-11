@@ -28,7 +28,10 @@ def allnabers(res,maxlen=MAXLEN):
                 if not a in e or len(b)>=len(a) and len(e)-len(a)+len(b)>maxlen: continue
                 # XXX: не работает, когда ss→что-то для ssss (получится ['', '', ''], а надо ещё ['s','','s']
                 # Разобьём элемент на части, удалив из него все вхождения a
+                # Если a — пустая строка (правило вида ""→"что-то"),
+                # то элемент "tss" превращается в ["", "t", "s", "s", "" ]
                 chain = e.split(a) if a else [""]+list(e)+[""]
+                # Соберём обратно, заменив последовательно по одному вхождению a на b
                 ret |= {a.join(chain[:i+1])+b+a.join(chain[i+1:]) for i in range(len(chain)-1)}
     return ret
 
