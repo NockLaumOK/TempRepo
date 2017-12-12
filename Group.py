@@ -78,23 +78,23 @@ def outtable(T):
         print("|",fmt.format(look1(a,Al)), " ".join(fmt.format(look1(T.get((a,b),"."),Al)) for b in skeys),"|")
 
 # Таблица умножения состоит из произведений алфавита на ɛ
-table = { ("",el):el for el in Alp }
-table.update( { (el,""):el for el in Alp } )
+Table = { ("",el):el for el in Alp }
+Table.update( { (el,""):el for el in Alp } )
 
 l = 0
-while len(table)!=l:                    # Пока меняется объём таблицы
-    outtable(table)
-    l = len(table)
-    skeys = {a for a,b in table} | set(table.values())
+while len(Table)!=l:                    # Пока меняется объём таблицы
+    outtable(Table)
+    l = len(Table)
+    skeys = {a for a,b in Table} | set(Table.values())
     for a in skeys:                     # По всем известным
         for b in skeys:                 # парам элементов
-            table[a,b] = simplify(a+b)  # Вычислим их произведение
-            #print("{}*{}={}".format(look(a,Al),look(b,Al),look(table[a,b],Al)), end=" ")
-    #print(l,len(table))
-outtable(table)
+            Table[a,b] = simplify(a+b)  # Вычислим их произведение
+            #print("{}*{}={}".format(look(a,Al),look(b,Al),look(Table[a,b],Al)), end=" ")
+    #print(l,len(Table))
+outtable(Table)
 
 # Словарь обратных элементов (их проихведение == "" )
-inverts = { a:b for a,b in table if table[a,b]=="" }
+inverts = { a:b for a,b in Table if Table[a,b]=="" }
 
 def closure(group, table):
     '''Замыкание множества group по обратным элементам и умножению с помощью table'''
@@ -120,12 +120,19 @@ def outgroup(group):
     '''Вывод группы'''
     print("<",*[look1(g,Al) for g in sorted(group)],">")
 
-subgroups(table)
+subgroups(Table)
 print("\n\tSubgroups:",len(subcache))
 for g in sorted(subcache, key=lambda s: (len(s),"".join(s))):
     outgroup(g)
 
+import pickle
 import readline
+
+fname = "_".join(sorted("{}-{}".format(a,b) for a,b in Rules))
+with open(fname,"wb") as f:
+    pickle.dump(Rules,f)
+    pickle.dump(Table,f)
+
 el = "s"
 while el:
     el = input("simplify({})> ".format(MAXLEN)).replace("*","")
