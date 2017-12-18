@@ -6,6 +6,8 @@ CСоздание конечной группы
 Единичный элемент — пустая строка (при выводе обозначается ɛ)
 '''
 
+#xterm: -g 120x45
+
 import itertools 
 
 # Как выводить единичный элемент
@@ -29,7 +31,7 @@ def allnabers(res,maxlen=MAXLEN):
                 # Если шаблон не содержится в элементе или результат слишком длинный, ничего не делать
                 if not a in el or len(b)>=len(a) and len(el)-len(a)+len(b)>maxlen: continue
                 # Применим правило один раз во всех возможных местах
-                ret |= {el[:i]+el[i:].replace(a,b,1) for i in range(len(el)-len(a)+1) if el[i:].startswith(a)}
+                ret |= {el[:i]+el[i:].replace(a,b,1 if el[i:] else -1) for i in range(len(el)-len(a)+1) if el[i:].startswith(a)}
     return ret
 
 # Кеш упрощённых выражений
@@ -57,7 +59,7 @@ def simplify(el,verbose=True):
 
 lookers = "⁰¹²³⁴⁶⁷⁸⁹"                   # Красивые степени (только до 9)
 lookers *= 1+(MAXLEN//len(lookers))     # на всякий случай (для степеней больше 9)
-def look(s,alp):
+def look(s,alp=Alp):
     '''Украсить слово (например sssssttt → s⁵t³) в алфавите alp'''
     for c in alp:
         for i in range(s.count(c),1,-1):
@@ -85,7 +87,7 @@ l = 0
 while len(Table)!=l:                    # Пока меняется объём таблицы
     outtable(Table)
     l = len(Table)
-    skeys = {a for a,b in Table} | set(Table.values())
+    skeys = set(Table.values())
     for a in skeys:                     # По всем известным
         for b in skeys:                 # парам элементов
             Table[a,b] = simplify(a+b)  # Вычислим их произведение
@@ -93,7 +95,7 @@ while len(Table)!=l:                    # Пока меняется объём �
     #print(l,len(Table))
 outtable(Table)
 
-# Словарь обратных элементов (их проихведение == "" )
+# Словарь обратных элементов (их произведение == "" )
 inverts = { a:b for a,b in Table if Table[a,b]=="" }
 
 def closure(group, table):
@@ -108,22 +110,31 @@ def closure(group, table):
 subcache = set()                        # Множество всех подгрупп
 def subgroups(table,group=set("")):
     '''Поиск всех подгрупп, определяемых таблицей table и содержащих все элементы из group'''
-    els = {a for a,b in table.keys()}   # Элементы группы
-    for el in els - group:              # По всемэлементам не из группы
+    els = set(Table.values())           # Элементы группы
+    for el in els - group:              # По всем элементам не из группы
         # Добавим элемент в множество и сделаем из него группу
         sub = frozenset(closure(group|{el},table))
         if sub not in subcache:         # Если такой подгруппы не было
             subcache.add(sub)           # добавим её
             subgroups(table, sub)       # найдём все подгруппы, содержащие её элементы
 
-def outgroup(group):
+def outgroup(group, prefix=""):
     '''Вывод группы'''
-    print("<",*[look1(g,Al) for g in sorted(group)],">")
+    print(prefix,"<",*[look1(g,Al) for g in sorted(group)],">")
+
+def normal(subgroup, group, verbose=False):
+    '''Является ли subgroup нормальным делителем group?
+    Т. е. совпадают ли множества {g*s} и {s*g}
+    для каждого g из group и всех s из subgroup'''
+    for g in group:
+        if  { Table[g,s] for s in subgroup } != { Table[s,g] for s in subgroup }:
+                return False
+    return True
 
 subgroups(Table)
 print("\n\tSubgroups:",len(subcache))
 for g in sorted(subcache, key=lambda s: (len(s),"".join(s))):
-    outgroup(g)
+    outgroup(g,"*N*" if normal(g,set(Table.values())) else "   ")
 
 import pickle
 import readline
@@ -136,4 +147,10 @@ with open(fname,"wb") as f:
 el = "s"
 while el:
     el = input("simplify({})> ".format(MAXLEN)).replace("*","")
-    print(look(simplify(el,False),Al))
+    try:
+        if set("*()") & set(el):
+            print(eval(el))
+        else:
+            print(look(simplify(el,False),Al))
+    except Exception as e:
+            print(e)
